@@ -5,13 +5,8 @@ use std::ops::AddAssign;
 pub struct WrappingU32<const MIN: u32, const MAX: u32>(u32);
 
 impl<const MIN: u32, const MAX: u32> WrappingU32<MIN, MAX> {
-    pub fn new(mut inner: u32) -> Self {
-        if inner > MAX {
-            let rem = (inner - MIN) % (MAX - MIN);
-            inner = rem + MIN;
-        }
-
-        Self(inner)
+    pub fn new(inner: u32) -> Self {
+        Self::from(inner)
     }
 
     pub fn inner(&self) -> u32 {
@@ -20,7 +15,12 @@ impl<const MIN: u32, const MAX: u32> WrappingU32<MIN, MAX> {
 }
 
 impl<const MIN: u32, const MAX: u32> From<u32> for WrappingU32<MIN, MAX> {
-    fn from(inner: u32) -> Self {
+    fn from(mut inner: u32) -> Self {
+        if inner > MAX {
+            let rem = (inner - MIN) % (MAX - MIN);
+            inner = rem + MIN;
+        }
+
         Self(inner)
     }
 }
@@ -43,7 +43,7 @@ impl<const MIN: u32, const MAX: u32, const OTHER_MIN: u32, const OTHER_MAX: u32>
 
 impl<const MIN: u32, const MAX: u32> AddAssign<u32> for WrappingU32<MIN, MAX> {
     fn add_assign(&mut self, other: u32) {
-        *self = WrappingU32::from(*self + other);
+        *self = WrappingU32::from(self.0 + other);
     }
 }
 
@@ -83,5 +83,21 @@ mod tests {
         let b = WrappingU32::<1, 302>(4);
         assert_eq!(a + b, 7);
         assert_eq!(b + a, 7);
+    }
+
+    #[test]
+    fn overflow_will_wrap() {
+        let mut a = WrappingU32::<0, 10>(4);
+        assert_eq!(a + 8, 12);
+
+        a += 8;
+        assert_ne!(a.inner(), 12);
+        assert_eq!(a.inner(), 2);
+
+        a += 4;
+        assert_eq!(a.inner(), 6);
+
+        a += 1000001;
+        assert_eq!(a.inner(), 7);
     }
 }
