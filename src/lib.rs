@@ -61,20 +61,27 @@ pub enum ArithmeticError {
     WouldUnderflow,
 }
 
+impl<const MIN: u32, const MAX: u32> PartialEq for WrappingU32<MIN, MAX> {
+    fn eq(&self, other: &WrappingU32<MIN, MAX>) -> bool {
+        self.0 == other.0
+    }
+}
+impl<const MIN: u32, const MAX: u32> Eq for WrappingU32<MIN, MAX> {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn can_create() {
-        let bounded = WrappingU32::<3, 9>(5);
-        assert_eq!(bounded.inner(), 5)
+        let a = WrappingU32::<3, 9>(5);
+        assert_eq!(a.inner(), 5)
     }
 
     #[test]
     fn can_add_int() {
-        let bounded = WrappingU32::<3, 9>(4);
-        assert_eq!(bounded + 2, 6);
+        let a = WrappingU32::<3, 9>(4);
+        assert_eq!(a + 2, 6);
     }
 
     #[test]
@@ -99,5 +106,22 @@ mod tests {
 
         a += 1000001;
         assert_eq!(a.inner(), 7);
+    }
+
+    #[test]
+    fn add_assign_matches_new() {
+        let mut a = WrappingU32::<0, 10>(4);
+
+        let b = WrappingU32::<0, 10>::from(a + 8);
+        a += 8;
+        assert_eq!(a, b);
+
+        let b = WrappingU32::<0, 10>::from(a + 4);
+        a += 4;
+        assert_eq!(a, b);
+
+        let b = WrappingU32::<0, 10>::from(a + 1000001);
+        a += 1000001;
+        assert_eq!(a, b);
     }
 }
