@@ -29,7 +29,10 @@ impl<const MIN: u32, const MAX: u32> From<u32> for WrappingU32<MIN, MAX> {
     fn from(mut inner: u32) -> Self {
         if inner > MAX {
             let rem = (inner - MIN) % (MAX - MIN);
-            inner = rem + MIN;
+            inner = MIN + rem;
+        } else if inner < MIN {
+            let rem = (inner + MIN) % (MAX - MIN);
+            inner = MIN + rem;
         }
 
         Self(inner)
@@ -81,16 +84,25 @@ macro_rules! arith_assign_impl {
 }
 
 arith_impl!(Add, add, |this, other| this + other);
-arith_impl!(Sub, sub, |this, other| this - other);
 arith_impl!(Div, div, |this, other| this / other);
 arith_impl!(Mul, mul, |this, other| this * other);
 arith_impl!(Rem, rem, |this, other| this % other);
 
+// Sub takes a bit more work, as we have to factor in underflows for unsigned
+// integers in advance.
+arith_impl!(Sub, sub, |this, mut other| {
+    if other > this {
+        let rem = (other + MIN) % (MAX - MIN);
+        other = MIN + rem;
+    }
+    this - other
+});
+
 arith_assign_impl!(AddAssign, add_assign, add);
-arith_assign_impl!(SubAssign, sub_assign, sub);
 arith_assign_impl!(MulAssign, mul_assign, mul);
 arith_assign_impl!(DivAssign, div_assign, div);
 arith_assign_impl!(RemAssign, rem_assign, rem);
+arith_assign_impl!(SubAssign, sub_assign, sub);
 
 impl<const MIN: u32, const MAX: u32> PartialEq<u32> for WrappingU32<MIN, MAX> {
     fn eq(&self, other: &u32) -> bool {
@@ -172,6 +184,26 @@ mod tests {
 
         a += 1000001;
         assert_eq!(a.inner(), 7);
+    }
+
+    #[test]
+    fn bounded_underflow_will_wrap() {
+        let mut a = WrappingU32::<4, 8>(6);
+        assert_eq!(a - 3, 3);
+
+        a -= 3;
+        assert_ne!(a.inner(), 3);
+        assert_eq!(a.inner(), 7);
+
+        a -= 4;
+        assert_eq!(a.inner(), 7);
+    }
+
+    #[test]
+    fn real_underflow_will_wrap() {
+        let mut a = WrappingU32::<0, 4>(2);
+        a -= 4000001;
+        assert_eq!(a.inner(), 1);
     }
 
     #[test]
