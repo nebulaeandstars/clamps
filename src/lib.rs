@@ -93,6 +93,14 @@ mod tests {
     }
 
     #[test]
+    fn can_addassign_other() {
+        let mut a = WrappingU32::<3, 9>(3);
+        let b = WrappingU32::<0, 10>(4);
+        a += b;
+        assert_eq!(a.inner(), 7);
+    }
+
+    #[test]
     fn overflow_will_wrap() {
         let mut a = WrappingU32::<0, 10>(4);
         assert_eq!(a + 8, 12);
@@ -112,15 +120,15 @@ mod tests {
     fn add_assign_matches_new() {
         let mut a = WrappingU32::<0, 10>(4);
 
-        let b = WrappingU32::<0, 10>::from(a + 8);
+        let b = (a + 8).into();
         a += 8;
         assert_eq!(a, b);
 
-        let b = WrappingU32::<0, 10>::from(a + 4);
+        let b = (a + 4).into();
         a += 4;
         assert_eq!(a, b);
 
-        let b = WrappingU32::<0, 10>::from(a + 1000001);
+        let b = (a + 1000001).into();
         a += 1000001;
         assert_eq!(a, b);
     }
