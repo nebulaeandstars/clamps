@@ -70,6 +70,12 @@ impl<const MIN: u32, const MAX: u32> PartialEq<u32> for WrappingU32<MIN, MAX> {
     }
 }
 
+impl<const MIN: u32, const MAX: u32> PartialOrd<u32> for WrappingU32<MIN, MAX> {
+    fn partial_cmp(&self, other: &u32) -> Option<Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
 impl<const MIN: u32, const MAX: u32, const OTHER_MIN: u32, const OTHER_MAX: u32>
     PartialEq<WrappingU32<OTHER_MIN, OTHER_MAX>> for WrappingU32<MIN, MAX>
 {
@@ -78,6 +84,20 @@ impl<const MIN: u32, const MAX: u32, const OTHER_MIN: u32, const OTHER_MAX: u32>
     }
 }
 impl<const MIN: u32, const MAX: u32> Eq for WrappingU32<MIN, MAX> {}
+
+impl<const MIN: u32, const MAX: u32, const OTHER_MIN: u32, const OTHER_MAX: u32>
+    PartialOrd<WrappingU32<OTHER_MIN, OTHER_MAX>> for WrappingU32<MIN, MAX>
+{
+    fn partial_cmp(&self, other: &WrappingU32<OTHER_MIN, OTHER_MAX>) -> Option<Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl<const MIN: u32, const MAX: u32> Ord for WrappingU32<MIN, MAX> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -128,19 +148,31 @@ mod tests {
     }
 
     #[test]
-    fn add_assign_matches_new() {
+    fn addassign_matches_new() {
         let mut a = WrappingU32::<0, 10>(4);
 
-        let b = (a + 8).into();
+        let b = WrappingU32::<0, 10>::from(a + 8);
         a += 8;
         assert_eq!(a, b);
 
-        let b = (a + 4).into();
+        let b = WrappingU32::<0, 10>::from(a + 4);
         a += 4;
         assert_eq!(a, b);
 
-        let b = (a + 1000001).into();
+        let b = WrappingU32::<0, 10>::from(a + 1000001);
         a += 1000001;
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn test_ord() {
+        let a = WrappingU32::<0, 8>(5);
+        let b = WrappingU32::<5, 20>(10);
+        let c = 15;
+
+        assert!(a < b);
+        assert!(a < c);
+        assert!(c > a.inner());
+        assert!(c > b.inner());
     }
 }
