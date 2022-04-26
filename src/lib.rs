@@ -1,3 +1,6 @@
+use std::cmp::Ord;
+use std::cmp::Ordering;
+use std::cmp::PartialOrd;
 use std::ops::Add;
 use std::ops::AddAssign;
 
@@ -61,8 +64,16 @@ pub enum ArithmeticError {
     WouldUnderflow,
 }
 
-impl<const MIN: u32, const MAX: u32> PartialEq for WrappingU32<MIN, MAX> {
-    fn eq(&self, other: &WrappingU32<MIN, MAX>) -> bool {
+impl<const MIN: u32, const MAX: u32> PartialEq<u32> for WrappingU32<MIN, MAX> {
+    fn eq(&self, other: &u32) -> bool {
+        self.0 == *other
+    }
+}
+
+impl<const MIN: u32, const MAX: u32, const OTHER_MIN: u32, const OTHER_MAX: u32>
+    PartialEq<WrappingU32<OTHER_MIN, OTHER_MAX>> for WrappingU32<MIN, MAX>
+{
+    fn eq(&self, other: &WrappingU32<OTHER_MIN, OTHER_MAX>) -> bool {
         self.0 == other.0
     }
 }
