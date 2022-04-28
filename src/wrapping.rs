@@ -7,142 +7,152 @@ use std::ops::{
 #[derive(Debug, Clone, Copy)]
 pub struct WrappingU32<const MIN: u32, const MAX: u32>(u32);
 
-impl<const MIN: u32, const MAX: u32> WrappingU32<MIN, MAX> {
-    pub fn new(inner: u32) -> Self { Self::from(inner) }
+macro_rules! impl_all {
+    ($type:ty, $other:ty, $inner:ty) => {
+        impl_create!($type, $inner);
 
-    pub fn inner(&self) -> u32 { self.0 }
+        impl_arith!($type, $other, $inner, Add, add, |this, other| this
+            + other);
+        impl_arith!($type, $other, $inner, Div, div, |this, other| this
+            / other);
+        impl_arith!($type, $other, $inner, Mul, mul, |this, other| this
+            * other);
+        impl_arith!($type, $other, $inner, Rem, rem, |this, other| this
+            % other);
+
+
+        // Sub takes a bit more work, as we have to factor in underflows for
+        // unsigned integers in advance.
+        impl_arith!($type, $other, $inner, Sub, sub, |this, mut other| {
+            if other > this {
+                let rem = (other + MIN) % (MAX - MIN);
+                other = MIN + rem;
+            }
+            this - other
+        });
+
+        impl_arith_assign!($type, $other, $inner, AddAssign, add_assign, add);
+        impl_arith_assign!($type, $other, $inner, MulAssign, mul_assign, mul);
+        impl_arith_assign!($type, $other, $inner, DivAssign, div_assign, div);
+        impl_arith_assign!($type, $other, $inner, RemAssign, rem_assign, rem);
+        impl_arith_assign!($type, $other, $inner, SubAssign, sub_assign, sub);
+
+        impl_ord!($type, $other, $inner);
+    };
 }
 
-impl<const MIN: u32, const MAX: u32> From<u32> for WrappingU32<MIN, MAX> {
-    fn from(mut inner: u32) -> Self {
-        if inner > MAX {
-            let rem = (inner - MIN) % (MAX - MIN);
-            inner = MIN + rem;
-        } else if inner < MIN {
-            let rem = (inner + MIN) % (MAX - MIN);
-            inner = MIN + rem;
+macro_rules! impl_create {
+    ($type:ty, $inner:ty) => {
+        impl<const MIN: $inner, const MAX: $inner> $type {
+            pub fn new(inner: $inner) -> Self { Self::from(inner) }
+            pub fn inner(&self) -> $inner { self.0 }
         }
 
-        Self(inner)
-    }
+        impl<const MIN: $inner, const MAX: $inner> From<$inner> for $type {
+            fn from(mut inner: $inner) -> Self {
+                if inner > MAX {
+                    let rem = (inner - MIN) % (MAX - MIN);
+                    inner = MIN + rem;
+                } else if inner < MIN {
+                    let rem = (inner + MIN) % (MAX - MIN);
+                    inner = MIN + rem;
+                }
+
+                Self(inner)
+            }
+        }
+    };
 }
 
 // provides an easier way to define two implementations:
 // - impl $trait<u32> for WrappingT<MIN, MAX>
 // - impl $trait<WrappingT<OTHER_MIN, OTHER_MAX>> for WrappingT<MIN, MAX>
 //
-// The generics were getting a bit ridiculous, so this short-hand exists to make
-// defining arithmetic traits like Add, Sub, etc. much easier.
-macro_rules! arith_impl {
-    ($trait:ident, $fn:ident, $impl:expr) => {
-        impl<const MIN: u32, const MAX: u32> $trait<u32>
-            for WrappingU32<MIN, MAX>
-        {
-            type Output = u32;
-            fn $fn(self, other: u32) -> Self::Output { $impl(self.0, other) }
+// The generics were getting a bit ridiculous, so this short-hand exists to
+// make defining arithmetic traits like Add, Sub, etc. much easier.
+macro_rules! impl_arith {
+    ($type:ty, $other:ty, $inner:ty, $trait:ident, $fn:ident, $impl:expr) => {
+        impl<const MIN: $inner, const MAX: $inner> $trait<$inner> for $type {
+            type Output = $inner;
+            fn $fn(self, other: $inner) -> Self::Output { $impl(self.0, other) }
         }
 
         impl<
-                const MIN: u32,
-                const MAX: u32,
-                const OTHER_MIN: u32,
-                const OTHER_MAX: u32,
-            > $trait<WrappingU32<OTHER_MIN, OTHER_MAX>>
-            for WrappingU32<MIN, MAX>
+                const MIN: $inner,
+                const MAX: $inner,
+                const OTHER_MIN: $inner,
+                const OTHER_MAX: $inner,
+            > $trait<$other> for $type
         {
-            type Output = u32;
-            fn $fn(
-                self, other: WrappingU32<OTHER_MIN, OTHER_MAX>,
-            ) -> Self::Output {
+            type Output = $inner;
+            fn $fn(self, other: $other) -> Self::Output {
                 $impl(self.0, other.0)
             }
         }
     };
 }
 
-macro_rules! arith_assign_impl {
-    ($trait:ident, $fn:ident, $op:ident) => {
-        impl<const MIN: u32, const MAX: u32> $trait<u32>
-            for WrappingU32<MIN, MAX>
-        {
-            fn $fn(&mut self, other: u32) { *self = self.$op(other).into() }
+macro_rules! impl_arith_assign {
+    ($type:ty, $other:ty, $inner:ty, $trait:ident, $fn:ident, $op:ident) => {
+        impl<const MIN: $inner, const MAX: $inner> $trait<$inner> for $type {
+            fn $fn(&mut self, other: $inner) { *self = self.$op(other).into() }
         }
 
         impl<
-                const MIN: u32,
-                const MAX: u32,
-                const OTHER_MIN: u32,
-                const OTHER_MAX: u32,
-            > $trait<WrappingU32<OTHER_MIN, OTHER_MAX>>
-            for WrappingU32<MIN, MAX>
+                const MIN: $inner,
+                const MAX: $inner,
+                const OTHER_MIN: $inner,
+                const OTHER_MAX: $inner,
+            > $trait<$other> for $type
         {
-            fn $fn(&mut self, other: WrappingU32<OTHER_MIN, OTHER_MAX>) {
-                *self = self.$op(other).into()
-            }
+            fn $fn(&mut self, other: $other) { *self = self.$op(other).into() }
         }
     };
 }
 
-arith_impl!(Add, add, |this, other| this + other);
-arith_impl!(Div, div, |this, other| this / other);
-arith_impl!(Mul, mul, |this, other| this * other);
-arith_impl!(Rem, rem, |this, other| this % other);
+macro_rules! impl_ord {
+    ($type:ty, $other:ty, $inner:ty) => {
+        impl<const MIN: $inner, const MAX: $inner> PartialEq<$inner> for $type {
+            fn eq(&self, other: &$inner) -> bool { self.0 == *other }
+        }
 
-// Sub takes a bit more work, as we have to factor in underflows for unsigned
-// integers in advance.
-arith_impl!(Sub, sub, |this, mut other| {
-    if other > this {
-        let rem = (other + MIN) % (MAX - MIN);
-        other = MIN + rem;
-    }
-    this - other
-});
+        impl<
+                const MIN: $inner,
+                const MAX: $inner,
+                const OTHER_MIN: $inner,
+                const OTHER_MAX: $inner,
+            > PartialEq<$other> for $type
+        {
+            fn eq(&self, other: &$other) -> bool { self.0 == other.0 }
+        }
+        impl<const MIN: $inner, const MAX: $inner> Eq for $type {}
 
-arith_assign_impl!(AddAssign, add_assign, add);
-arith_assign_impl!(MulAssign, mul_assign, mul);
-arith_assign_impl!(DivAssign, div_assign, div);
-arith_assign_impl!(RemAssign, rem_assign, rem);
-arith_assign_impl!(SubAssign, sub_assign, sub);
+        impl<const MIN: $inner, const MAX: $inner> PartialOrd<$inner>
+            for $type
+        {
+            fn partial_cmp(&self, other: &$inner) -> Option<Ordering> {
+                self.0.partial_cmp(other)
+            }
+        }
 
-impl<const MIN: u32, const MAX: u32> PartialEq<u32> for WrappingU32<MIN, MAX> {
-    fn eq(&self, other: &u32) -> bool { self.0 == *other }
+        impl<
+                const MIN: $inner,
+                const MAX: $inner,
+                const OTHER_MIN: $inner,
+                const OTHER_MAX: $inner,
+            > PartialOrd<$other> for $type
+        {
+            fn partial_cmp(&self, other: &$other) -> Option<Ordering> {
+                self.0.partial_cmp(&other.0)
+            }
+        }
+        impl<const MIN: $inner, const MAX: $inner> Ord for $type {
+            fn cmp(&self, other: &Self) -> Ordering { self.0.cmp(&other.0) }
+        }
+    };
 }
 
-impl<
-        const MIN: u32,
-        const MAX: u32,
-        const OTHER_MIN: u32,
-        const OTHER_MAX: u32,
-    > PartialEq<WrappingU32<OTHER_MIN, OTHER_MAX>> for WrappingU32<MIN, MAX>
-{
-    fn eq(&self, other: &WrappingU32<OTHER_MIN, OTHER_MAX>) -> bool {
-        self.0 == other.0
-    }
-}
-impl<const MIN: u32, const MAX: u32> Eq for WrappingU32<MIN, MAX> {}
-
-impl<const MIN: u32, const MAX: u32> PartialOrd<u32> for WrappingU32<MIN, MAX> {
-    fn partial_cmp(&self, other: &u32) -> Option<Ordering> {
-        self.0.partial_cmp(other)
-    }
-}
-
-impl<
-        const MIN: u32,
-        const MAX: u32,
-        const OTHER_MIN: u32,
-        const OTHER_MAX: u32,
-    > PartialOrd<WrappingU32<OTHER_MIN, OTHER_MAX>> for WrappingU32<MIN, MAX>
-{
-    fn partial_cmp(
-        &self, other: &WrappingU32<OTHER_MIN, OTHER_MAX>,
-    ) -> Option<Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-impl<const MIN: u32, const MAX: u32> Ord for WrappingU32<MIN, MAX> {
-    fn cmp(&self, other: &Self) -> Ordering { self.0.cmp(&other.0) }
-}
+impl_all!(WrappingU32<MIN, MAX>, WrappingU32<OTHER_MIN, OTHER_MAX>, u32);
 
 #[cfg(test)]
 mod tests {
