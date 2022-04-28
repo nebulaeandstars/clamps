@@ -47,6 +47,8 @@ macro_rules! impl_create {
 
         impl<const MIN: $inner, const MAX: $inner> From<$inner> for $type {
             fn from(mut inner: $inner) -> Self {
+                assert!(MIN < MAX, "MIN must be less than MAX");
+
                 if inner >= MAX {
                     let rem = (inner - MIN) % (MAX - MIN);
                     inner = MIN + rem;
@@ -316,4 +318,12 @@ mod tests {
         assert_ne!(a, 10);
         assert_eq!(a, 0);
     }
+
+    #[test]
+    #[should_panic]
+    fn cannot_use_equal_bounds() { let _ = WrappingUSize::<10, 10>::from(5); }
+
+    #[test]
+    #[should_panic]
+    fn cannot_use_invalid_bounds() { let _ = WrappingUSize::<15, 10>::from(5); }
 }
