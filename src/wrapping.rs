@@ -4,9 +4,6 @@ use std::ops::{
     SubAssign,
 };
 
-#[derive(Debug, Clone, Copy)]
-pub struct WrappingU32<const MIN: u32, const MAX: u32>(u32);
-
 macro_rules! impl_all {
     ($type:ty, $other:ty, $inner:ty) => {
         impl_create!($type, $inner);
@@ -152,7 +149,53 @@ macro_rules! impl_ord {
     };
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingU8<const MIN: u8, const MAX: u8>(u8);
+impl_all!(WrappingU8<MIN, MAX>, WrappingU8<OTHER_MIN, OTHER_MAX>, u8);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingU16<const MIN: u16, const MAX: u16>(u16);
+impl_all!(WrappingU16<MIN, MAX>, WrappingU16<OTHER_MIN, OTHER_MAX>, u16);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingU32<const MIN: u32, const MAX: u32>(u32);
 impl_all!(WrappingU32<MIN, MAX>, WrappingU32<OTHER_MIN, OTHER_MAX>, u32);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingU64<const MIN: u64, const MAX: u64>(u64);
+impl_all!(WrappingU64<MIN, MAX>, WrappingU64<OTHER_MIN, OTHER_MAX>, u64);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingU128<const MIN: u128, const MAX: u128>(u128);
+impl_all!(WrappingU128<MIN, MAX>, WrappingU128<OTHER_MIN, OTHER_MAX>, u128);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingUSize<const MIN: usize, const MAX: usize>(usize);
+impl_all!(WrappingUSize<MIN, MAX>, WrappingUSize<OTHER_MIN, OTHER_MAX>, usize);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingI8<const MIN: i8, const MAX: i8>(i8);
+impl_all!(WrappingI8<MIN, MAX>, WrappingI8<OTHER_MIN, OTHER_MAX>, i8);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingI16<const MIN: i16, const MAX: i16>(i16);
+impl_all!(WrappingI16<MIN, MAX>, WrappingI16<OTHER_MIN, OTHER_MAX>, i16);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingI32<const MIN: i32, const MAX: i32>(i32);
+impl_all!(WrappingI32<MIN, MAX>, WrappingI32<OTHER_MIN, OTHER_MAX>, i32);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingI64<const MIN: i64, const MAX: i64>(i64);
+impl_all!(WrappingI64<MIN, MAX>, WrappingI64<OTHER_MIN, OTHER_MAX>, i64);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingI128<const MIN: i128, const MAX: i128>(i128);
+impl_all!(WrappingI128<MIN, MAX>, WrappingI128<OTHER_MIN, OTHER_MAX>, i128);
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrappingISize<const MIN: isize, const MAX: isize>(isize);
+impl_all!(WrappingISize<MIN, MAX>, WrappingISize<OTHER_MIN, OTHER_MAX>, isize);
 
 #[cfg(test)]
 mod tests {
@@ -249,5 +292,20 @@ mod tests {
         assert!(a < c);
         assert!(c > a.inner());
         assert!(c > b.inner());
+    }
+
+    #[test]
+    fn test_all_types_exist() {
+        let _ = WrappingU8::<0, 10>::from(5);
+        let _ = WrappingU16::<0, 10>::from(5);
+        let _ = WrappingU32::<0, 10>::from(5);
+        let _ = WrappingU64::<0, 10>::from(5);
+        let _ = WrappingU128::<0, 10>::from(5);
+
+        let _ = WrappingI8::<-10, 10>::from(-5);
+        let _ = WrappingI16::<-10, 10>::from(-5);
+        let _ = WrappingI32::<-10, 10>::from(-5);
+        let _ = WrappingI64::<-10, 10>::from(-5);
+        let _ = WrappingI128::<-10, 10>::from(-5);
     }
 }

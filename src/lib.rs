@@ -1,3 +1,3 @@
 mod wrapping;
 
-pub use wrapping::WrappingU32;
+pub use wrapping::*;
