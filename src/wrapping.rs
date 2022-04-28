@@ -47,7 +47,7 @@ macro_rules! impl_create {
 
         impl<const MIN: $inner, const MAX: $inner> From<$inner> for $type {
             fn from(mut inner: $inner) -> Self {
-                if inner > MAX {
+                if inner >= MAX {
                     let rem = (inner - MIN) % (MAX - MIN);
                     inner = MIN + rem;
                 } else if inner < MIN {
@@ -283,7 +283,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ord() {
+    fn ord_is_implemented() {
         let a = WrappingU32::<0, 8>(5);
         let b = WrappingU32::<5, 20>(10);
         let c = 15;
@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn test_all_types_exist() {
+    fn all_types_exist() {
         let _ = WrappingU8::<0, 10>::from(5);
         let _ = WrappingU16::<0, 10>::from(5);
         let _ = WrappingU32::<0, 10>::from(5);
@@ -307,5 +307,13 @@ mod tests {
         let _ = WrappingI32::<-10, 10>::from(-5);
         let _ = WrappingI64::<-10, 10>::from(-5);
         let _ = WrappingI128::<-10, 10>::from(-5);
+    }
+
+    #[test]
+    fn range_is_not_inclusive() {
+        let mut a = WrappingUSize::<0, 10>::from(5);
+        a += 5;
+        assert_ne!(a, 10);
+        assert_eq!(a, 0);
     }
 }
