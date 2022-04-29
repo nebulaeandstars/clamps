@@ -10,7 +10,7 @@ pub struct Wrapping<T> {
 impl<T: Ord + Clone + Add<Output = T> + Rem<Output = T> + Sub<Output = T>>
     Wrapping<T>
 {
-    fn new(mut inner: T, min: T, max: T) -> Self {
+    pub fn new(mut inner: T, min: T, max: T) -> Self {
         if min >= max {
             panic!("MIN value must be less than MAX")
         }
@@ -28,9 +28,18 @@ impl<T: Ord + Clone + Add<Output = T> + Rem<Output = T> + Sub<Output = T>>
         Self { inner, max, min }
     }
 
-    fn inner(&self) -> &T { &self.inner }
-    fn into_inner(self) -> T { self.inner }
+    pub fn inner(&self) -> &T { &self.inner }
+    pub fn into_inner(self) -> T { self.inner }
 }
+
+// equality
+impl<T: PartialEq> PartialEq<T> for Wrapping<T> {
+    fn eq(&self, other: &T) -> bool { self.inner == *other }
+}
+impl<T: PartialEq> PartialEq<Wrapping<T>> for Wrapping<T> {
+    fn eq(&self, other: &Wrapping<T>) -> bool { self.inner == other.inner }
+}
+impl<T: Eq> Eq for Wrapping<T> {}
 
 // We can only implement Debug if T implements Debug
 impl<T: fmt::Debug> fmt::Debug for Wrapping<T> {
@@ -69,5 +78,14 @@ mod tests {
         let foo = Wrapping { inner: 3, min: -5, max: 74 };
         let out = format!("{:?}", foo);
         assert_eq!(&out, "Wrapping {inner: 3, min: -5, max: 74}")
+    }
+
+    #[test]
+    fn test_eq() {
+        let foo = Wrapping { inner: 3, min: -5, max: 74 };
+        let bar = Wrapping { inner: 3, min: 0, max: 74 };
+        assert_eq!(foo, 3);
+        assert_eq!(bar, 3);
+        assert_eq!(foo, bar);
     }
 }
