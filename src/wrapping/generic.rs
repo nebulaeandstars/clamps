@@ -1,5 +1,8 @@
 use std::fmt;
-use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub,
+    SubAssign,
+};
 
 pub struct Wrapping<T> {
     inner: T,
@@ -59,6 +62,49 @@ impl_arith!(Sub, sub, |this, other| this - other);
 impl_arith!(Mul, mul, |this, other| this * other);
 impl_arith!(Div, div, |this, other| this / other);
 impl_arith!(Rem, rem, |this, other| this % other);
+
+// assigning arithmetic
+macro_rules! impl_arith_assign {
+    ($trait:ident, $fn:ident, $impl:expr) => {
+        impl<
+                T: PartialOrd
+                    + Copy
+                    + Add<Output = T>
+                    + Sub<Output = T>
+                    + Mul<Output = T>
+                    + Div<Output = T>
+                    + Rem<Output = T>
+                    + $trait,
+            > $trait<T> for Wrapping<T>
+        {
+            fn $fn(&mut self, other: T) {
+                *self = Wrapping::new($impl(*self, other), self.min, self.max)
+            }
+        }
+
+        impl<
+                T: PartialOrd
+                    + Copy
+                    + Add<Output = T>
+                    + Sub<Output = T>
+                    + Mul<Output = T>
+                    + Div<Output = T>
+                    + Rem<Output = T>
+                    + $trait,
+            > $trait<Wrapping<T>> for Wrapping<T>
+        {
+            fn $fn(&mut self, other: Wrapping<T>) {
+                *self = Wrapping::new($impl(*self, other), self.min, self.max)
+            }
+        }
+    };
+}
+
+impl_arith_assign!(AddAssign, add_assign, |this, other| this + other);
+impl_arith_assign!(SubAssign, sub_assign, |this, other| this - other);
+impl_arith_assign!(MulAssign, mul_assign, |this, other| this * other);
+impl_arith_assign!(DivAssign, div_assign, |this, other| this / other);
+impl_arith_assign!(RemAssign, rem_assign, |this, other| this % other);
 
 // equality
 impl<T: PartialEq> PartialEq<T> for Wrapping<T> {
@@ -131,6 +177,19 @@ mod tests {
                 assert_eq!(foo / num, foo.inner() / num);
                 assert_eq!(foo % num, foo.inner() % num);
             }
+        }
+    }
+
+    #[test]
+    fn test_wrapping() {
+        let mut foo = Wrapping::new(0.0, 0.0, 10.0);
+        for i in 0..1000 {
+            let num = i as f64 / 2.0;
+
+            assert_eq!(foo, num % 10.0);
+            assert_eq!(Wrapping::new(num, 0.0, 10.0), foo);
+
+            foo += 0.5;
         }
     }
 }
