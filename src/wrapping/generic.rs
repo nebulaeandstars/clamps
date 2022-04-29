@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, Rem, Sub};
+use std::ops::{Add, Div, Mul, Rem, Sub};
 
 pub struct Wrapping<T> {
     inner: T,
@@ -7,8 +7,13 @@ pub struct Wrapping<T> {
     max:   T,
 }
 
-impl<T: Ord + Clone + Add<Output = T> + Rem<Output = T> + Sub<Output = T>>
-    Wrapping<T>
+impl<
+        T: PartialOrd
+            + Clone
+            + Add<Output = T>
+            + Rem<Output = T>
+            + Sub<Output = T>,
+    > Wrapping<T>
 {
     pub fn new(mut inner: T, min: T, max: T) -> Self {
         if min >= max {
@@ -31,6 +36,29 @@ impl<T: Ord + Clone + Add<Output = T> + Rem<Output = T> + Sub<Output = T>>
     pub fn inner(&self) -> &T { &self.inner }
     pub fn into_inner(self) -> T { self.inner }
 }
+
+//arithmetic
+macro_rules! impl_arith {
+    ($trait:ident, $fn:ident, $impl:expr) => {
+        impl<T: $trait> $trait<T> for Wrapping<T> {
+            type Output = T::Output;
+            fn $fn(self, other: T) -> Self::Output { $impl(self.inner, other) }
+        }
+
+        impl<T: $trait> $trait<Wrapping<T>> for Wrapping<T> {
+            type Output = T::Output;
+            fn $fn(self, other: Wrapping<T>) -> Self::Output {
+                $impl(self.inner, other.inner)
+            }
+        }
+    };
+}
+
+impl_arith!(Add, add, |this, other| this + other);
+impl_arith!(Sub, sub, |this, other| this - other);
+impl_arith!(Mul, mul, |this, other| this * other);
+impl_arith!(Div, div, |this, other| this / other);
+impl_arith!(Rem, rem, |this, other| this % other);
 
 // equality
 impl<T: PartialEq> PartialEq<T> for Wrapping<T> {
@@ -62,6 +90,7 @@ impl<T: Clone> Clone for Wrapping<T> {
         }
     }
 }
+impl<T: Copy> Copy for Wrapping<T> {}
 
 #[cfg(test)]
 mod tests {
@@ -87,5 +116,21 @@ mod tests {
         assert_eq!(foo, 3);
         assert_eq!(bar, 3);
         assert_eq!(foo, bar);
+    }
+
+    #[test]
+    fn test_arith() {
+        let foo = Wrapping::new(5.0, -100.0, 100.0);
+        for i in -10..10 {
+            let num = i as f64;
+            assert_eq!(foo + num, foo.inner() + num);
+            assert_eq!(foo - num, foo.inner() - num);
+            assert_eq!(foo * num, foo.inner() * num);
+
+            if num != 0.0 {
+                assert_eq!(foo / num, foo.inner() / num);
+                assert_eq!(foo % num, foo.inner() % num);
+            }
+        }
     }
 }
