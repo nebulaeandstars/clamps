@@ -320,6 +320,14 @@ mod tests {
     }
 
     #[test]
+    fn range_is_not_inclusive_signed() {
+        let mut a = WrappingISize::<-10, 10>::from(5);
+        a += 5;
+        assert_ne!(a, 10);
+        assert_eq!(a, -10);
+    }
+
+    #[test]
     #[should_panic]
     fn cannot_use_equal_bounds() { let _ = WrappingUSize::<10, 10>::from(5); }
 
