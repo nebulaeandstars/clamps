@@ -226,6 +226,15 @@ mod tests {
     }
 
     #[test]
+    fn signed_integers_subtract_normally() {
+        let mut foo = WrappingI32::<-10, 10>(5);
+        foo -= 7;
+        assert_eq!(foo, -2);
+        foo -= 10;
+        assert_eq!(foo, 8);
+    }
+
+    #[test]
     fn range_is_not_inclusive() {
         let mut a = WrappingUSize::<0, 10>::from(5);
         a += 5;
