@@ -1,6 +1,6 @@
 //! Tests to validate that types work alongside each-other as expected.
 
-use clamps::*;
+use clamps::wrapping::*;
 
 #[test]
 fn wrapping_t_is_interoperable_with_t() {
