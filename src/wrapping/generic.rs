@@ -26,11 +26,11 @@ impl<
         // TODO: Reduce the number of clones needed here
         if inner >= max {
             let rem = (inner - min.clone()) % (max.clone() - min.clone());
-            inner = min.clone() + rem.clone();
+            inner = min.clone() + rem;
         } else if inner < min {
             let rem =
                 (inner.clone() + min.clone()) % (max.clone() - min.clone());
-            inner = min.clone() + rem.clone();
+            inner = min.clone() + rem;
         }
 
         Self { inner, max, min }
