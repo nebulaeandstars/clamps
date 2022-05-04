@@ -10,14 +10,7 @@ pub struct Saturating<T> {
     max:   T,
 }
 
-impl<
-        T: PartialOrd
-            + Clone
-            + Add<Output = T>
-            + Rem<Output = T>
-            + Sub<Output = T>,
-    > Saturating<T>
-{
+impl<T: PartialOrd + Clone> Saturating<T> {
     pub fn new(mut inner: T, min: T, max: T) -> Self {
         if min >= max {
             panic!("MIN value must be less than MAX")

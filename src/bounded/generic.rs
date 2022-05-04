@@ -9,14 +9,7 @@ pub struct Bounded<T> {
     max:   T,
 }
 
-impl<
-        T: PartialOrd
-            + Clone
-            + Add<Output = T>
-            + Rem<Output = T>
-            + Sub<Output = T>,
-    > Bounded<T>
-{
+impl<T: PartialOrd> Bounded<T> {
     pub fn new(inner: T, min: T, max: T) -> Result<Self, BoundsError> {
         if min >= max {
             panic!("MIN value must be less than MAX")
