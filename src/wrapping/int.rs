@@ -6,6 +6,31 @@ use std::ops::{
 
 use crate::macros::*;
 
+macro_rules! impl_create {
+    ($type:ty, $inner:ty) => {
+        impl<const MIN: $inner, const MAX: $inner> $type {
+            pub fn new(inner: $inner) -> Self { Self::from(inner) }
+            pub fn inner(&self) -> $inner { self.0 }
+        }
+
+        impl<const MIN: $inner, const MAX: $inner> From<$inner> for $type {
+            fn from(mut inner: $inner) -> Self {
+                assert!(MIN < MAX, "MIN must be less than MAX");
+
+                if inner >= MAX {
+                    let rem = (inner - MIN) % (MAX - MIN);
+                    inner = MIN + rem;
+                } else if inner < MIN {
+                    let rem = (inner + MIN) % (MAX - MIN);
+                    inner = MIN + rem;
+                }
+
+                Self(inner)
+            }
+        }
+    };
+}
+
 macro_rules! impl_all {
     ($type:ty, $other:ty, $inner:ty) => {
         impl_create!($type, $inner);
