@@ -1,13 +1,8 @@
 use std::cmp::{Ord, Ordering, PartialOrd};
 use std::ops::{Add, Div, Mul, Rem, Sub};
 
+use super::BoundsError;
 use crate::macros::*;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum BoundsError {
-    TooSmall,
-    TooLarge,
-}
 
 macro_rules! impl_create {
     ($type:ty, $inner:ty) => {
