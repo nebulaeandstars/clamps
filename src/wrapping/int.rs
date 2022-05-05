@@ -51,6 +51,9 @@ macro_rules! impl_all {
             if other > this {
                 let rem = (other + MIN) % (MAX - MIN);
                 other = MIN + rem;
+                if other > this {
+                    return this + MAX - other;
+                }
             }
             this - other
         });
@@ -177,8 +180,11 @@ mod tests {
     #[test]
     fn real_underflow_will_wrap() {
         let mut a = WrappingU32::<0, 4>(2);
+        let mut b = WrappingU32::<0, 4>(0);
         a -= 4000001;
+        b -= 4000001;
         assert_eq!(a.inner(), 1);
+        assert_eq!(b.inner(), 3);
     }
 
     #[test]
