@@ -1,5 +1,5 @@
 use std::cmp::{Ord, Ordering, PartialOrd};
-use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::ops::{Add, Div, Mul, Range, Rem, Sub};
 
 use super::BoundsError;
 use crate::macros::*;
@@ -11,6 +11,9 @@ macro_rules! impl_create {
                 Self::try_from(inner)
             }
             pub fn inner(&self) -> $inner { self.0 }
+            pub fn range(&self) -> Range<$inner> { MIN..MAX }
+            pub fn min_bound(&self) -> $inner { MIN }
+            pub fn max_bound(&self) -> $inner { MAX }
         }
 
         impl<const MIN: $inner, const MAX: $inner> TryFrom<$inner> for $type {
@@ -139,6 +142,14 @@ mod tests {
         assert!(a < c);
         assert!(c > a.inner());
         assert!(c > b.inner());
+    }
+
+    #[test]
+    fn test_max_and_min() {
+        let foo = BoundedISize::<-3, 8>::try_from(4).unwrap();
+        assert_eq!(foo.min_bound(), -3);
+        assert_eq!(foo.max_bound(), 8);
+        assert_eq!(foo.range(), -3..8);
     }
 
     #[test]

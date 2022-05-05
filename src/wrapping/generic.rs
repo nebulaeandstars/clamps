@@ -1,6 +1,6 @@
 use std::fmt;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub,
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Range, Rem, RemAssign, Sub,
     SubAssign,
 };
 
@@ -38,6 +38,9 @@ impl<
 
     pub fn inner(&self) -> &T { &self.inner }
     pub fn into_inner(self) -> T { self.inner }
+    pub fn range(&self) -> Range<&T> { &self.min..&self.max }
+    pub fn min_bound(&self) -> &T { &self.min }
+    pub fn max_bound(&self) -> &T { &self.max }
 }
 
 //arithmetic
@@ -153,6 +156,14 @@ mod tests {
         let foo = Wrapping { inner: 3, min: -5, max: 74 };
         let out = format!("{:?}", foo);
         assert_eq!(&out, "Wrapping {inner: 3, min: -5, max: 74}")
+    }
+
+    #[test]
+    fn test_max_and_min() {
+        let foo = Wrapping::new(4, -3, 8);
+        assert_eq!(foo.min_bound(), &-3);
+        assert_eq!(foo.max_bound(), &8);
+        assert_eq!(foo.range(), &-3..&8);
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::ops::{Add, Div, Mul, Range, Rem, Sub};
 
 use super::BoundsError;
 
@@ -26,6 +26,9 @@ impl<T: PartialOrd> Bounded<T> {
 
     pub fn inner(&self) -> &T { &self.inner }
     pub fn into_inner(self) -> T { self.inner }
+    pub fn range(&self) -> Range<&T> { &self.min..&self.max }
+    pub fn min_bound(&self) -> &T { &self.min }
+    pub fn max_bound(&self) -> &T { &self.max }
 }
 
 //arithmetic
@@ -107,6 +110,14 @@ mod tests {
         assert_eq!(foo, 3);
         assert_eq!(bar, 3);
         assert_eq!(foo, bar);
+    }
+
+    #[test]
+    fn test_max_and_min() {
+        let foo = Bounded::new(4, -3, 8).unwrap();
+        assert_eq!(foo.min_bound(), &-3);
+        assert_eq!(foo.max_bound(), &8);
+        assert_eq!(foo.range(), &-3..&8);
     }
 
     #[test]

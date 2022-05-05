@@ -1,7 +1,7 @@
 use std::cmp::{Ord, Ordering, PartialOrd};
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub,
-    SubAssign,
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, RangeInclusive, Rem,
+    RemAssign, Sub, SubAssign,
 };
 
 use crate::macros::*;
@@ -11,6 +11,9 @@ macro_rules! impl_create {
         impl<const MIN: $inner, const MAX: $inner> $type {
             pub fn new(inner: $inner) -> Self { Self::from(inner) }
             pub fn inner(&self) -> $inner { self.0 }
+            pub fn range(&self) -> RangeInclusive<$inner> { MIN..=MAX }
+            pub fn min_bound(&self) -> $inner { MIN }
+            pub fn max_bound(&self) -> $inner { MAX }
         }
 
         impl<const MIN: $inner, const MAX: $inner> From<$inner> for $type {
@@ -215,6 +218,14 @@ mod tests {
         let _ = SaturatingI32::<-10, 10>::from(-5);
         let _ = SaturatingI64::<-10, 10>::from(-5);
         let _ = SaturatingI128::<-10, 10>::from(-5);
+    }
+
+    #[test]
+    fn test_max_and_min() {
+        let foo = SaturatingISize::<-3, 8>::from(4);
+        assert_eq!(foo.min_bound(), -3);
+        assert_eq!(foo.max_bound(), 8);
+        assert_eq!(foo.range(), -3..=8);
     }
 
     #[test]

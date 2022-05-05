@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub,
-    SubAssign,
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, RangeInclusive, Rem,
+    RemAssign, Sub, SubAssign,
 };
 
 pub struct Saturating<T> {
@@ -27,6 +27,9 @@ impl<T: PartialOrd + Clone> Saturating<T> {
 
     pub fn inner(&self) -> &T { &self.inner }
     pub fn into_inner(self) -> T { self.inner }
+    pub fn range(&self) -> RangeInclusive<&T> { &self.min..=&self.max }
+    pub fn min_bound(&self) -> &T { &self.min }
+    pub fn max_bound(&self) -> &T { &self.max }
 }
 
 //arithmetic
@@ -151,6 +154,14 @@ mod tests {
         assert_eq!(foo, 3);
         assert_eq!(bar, 3);
         assert_eq!(foo, bar);
+    }
+
+    #[test]
+    fn test_max_and_min() {
+        let foo = Saturating::new(4, -3, 8);
+        assert_eq!(foo.min_bound(), &-3);
+        assert_eq!(foo.max_bound(), &8);
+        assert_eq!(foo.range(), &-3..=&8);
     }
 
     #[test]
