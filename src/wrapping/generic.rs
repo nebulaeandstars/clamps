@@ -104,10 +104,55 @@ macro_rules! impl_arith_assign {
 }
 
 impl_arith_assign!(AddAssign, add_assign, |this, other| this + other);
-impl_arith_assign!(SubAssign, sub_assign, |this, other| this - other);
 impl_arith_assign!(MulAssign, mul_assign, |this, other| this * other);
 impl_arith_assign!(DivAssign, div_assign, |this, other| this / other);
 impl_arith_assign!(RemAssign, rem_assign, |this, other| this % other);
+
+fn wrapping_sub<
+    T: Copy + PartialOrd + Sub<Output = T> + Add<Output = T> + Rem<Output = T>,
+>(
+    this: Wrapping<T>, mut other: T,
+) -> T {
+    if other > this.inner {
+        let rem = (other + this.min) % (this.max - this.min);
+        other = this.min + rem;
+        if other > this.inner {
+            return this.inner + this.max - other;
+        }
+    }
+    this.inner - other
+}
+
+impl<
+        T: PartialOrd
+            + Copy
+            + Add<Output = T>
+            + Sub<Output = T>
+            + Mul<Output = T>
+            + Div<Output = T>
+            + Rem<Output = T>,
+    > SubAssign<T> for Wrapping<T>
+{
+    fn sub_assign(&mut self, other: T) {
+        let result = wrapping_sub(*self, other);
+        *self = Wrapping::new(result, self.min, self.max)
+    }
+}
+
+impl<
+        T: PartialOrd
+            + Copy
+            + Add<Output = T>
+            + Sub<Output = T>
+            + Mul<Output = T>
+            + Div<Output = T>
+            + Rem<Output = T>,
+    > SubAssign<Wrapping<T>> for Wrapping<T>
+{
+    fn sub_assign(&mut self, other: Wrapping<T>) {
+        self.sub_assign(other.inner)
+    }
+}
 
 // equality
 impl<T: PartialEq> PartialEq<T> for Wrapping<T> {
@@ -196,11 +241,18 @@ mod tests {
         let mut foo = Wrapping::new(0.0, 0.0, 10.0);
         for i in 0..1000 {
             let num = i as f64 / 2.0;
-
             assert_eq!(foo, num % 10.0);
             assert_eq!(Wrapping::new(num, 0.0, 10.0), foo);
-
             foo += 0.5;
+        }
+    }
+
+    #[test]
+    fn test_wrapping_backward() {
+        let mut foo = Wrapping::<u32>::new(0, 0, 10);
+        for i in 0..100 {
+            foo -= 1;
+            assert_eq!(foo, 9 - (i % 10));
         }
     }
 }

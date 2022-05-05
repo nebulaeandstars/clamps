@@ -47,7 +47,6 @@ macro_rules! impl_all {
         impl_arith!($type, $other, $inner, Rem, rem, |this, other| this
             % other);
 
-
         // Sub takes a bit more work, as we have to factor in underflows for
         // unsigned integers in advance.
         impl_arith!($type, $other, $inner, Sub, sub, |this, mut other| {
