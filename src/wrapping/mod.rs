@@ -1,3 +1,5 @@
+//! Types that wrap to fit within their given bounds.
+
 mod generic;
 mod int;
 

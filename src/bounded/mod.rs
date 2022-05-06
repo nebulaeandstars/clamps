@@ -1,3 +1,5 @@
+//! Types that must fit within their given bounds to be constructed.
+
 mod generic;
 mod int;
 
