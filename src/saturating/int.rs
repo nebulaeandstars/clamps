@@ -44,22 +44,41 @@ macro_rules! impl_all {
             * other);
         impl_arith!($type, $other, $inner, Rem, rem, |this, other| this
             % other);
-
-        impl_arith!($type, $other, $inner, Sub, sub, |this, other| {
-            if this < other {
-                MIN
-            } else {
-                this - other
-            }
-        });
+        impl_arith!($type, $other, $inner, Sub, sub, |this, other| this
+            - other);
 
         impl_arith_assign!($type, $other, $inner, AddAssign, add_assign, add);
         impl_arith_assign!($type, $other, $inner, MulAssign, mul_assign, mul);
         impl_arith_assign!($type, $other, $inner, DivAssign, div_assign, div);
         impl_arith_assign!($type, $other, $inner, RemAssign, rem_assign, rem);
-        impl_arith_assign!($type, $other, $inner, SubAssign, sub_assign, sub);
 
         impl_ord!($type, $other, $inner);
+
+        impl<const MIN: $inner, const MAX: $inner> SubAssign<$inner> for $type {
+            fn sub_assign(&mut self, other: $inner) {
+                let result = {
+                    if other > self.0 - MIN {
+                        MIN
+                    } else {
+                        self.0 - other
+                    }
+                };
+
+                *self = result.into();
+            }
+        }
+
+        impl<
+                const MIN: $inner,
+                const MAX: $inner,
+                const OTHER_MIN: $inner,
+                const OTHER_MAX: $inner,
+            > SubAssign<$other> for $type
+        {
+            fn sub_assign(&mut self, other: $other) {
+                self.sub_assign(other.inner())
+            }
+        }
     };
 }
 
@@ -218,6 +237,21 @@ mod tests {
         let _ = SaturatingI32::<-10, 10>::from(-5);
         let _ = SaturatingI64::<-10, 10>::from(-5);
         let _ = SaturatingI128::<-10, 10>::from(-5);
+    }
+
+    #[test]
+    fn test_arith() {
+        let foo = SaturatingISize::<-100, 100>::new(5);
+        for num in -10..10 {
+            assert_eq!(foo + num, foo.inner() + num);
+            assert_eq!(foo - num, foo.inner() - num);
+            assert_eq!(foo * num, foo.inner() * num);
+
+            if num != 0 {
+                assert_eq!(foo / num, foo.inner() / num);
+                assert_eq!(foo % num, foo.inner() % num);
+            }
+        }
     }
 
     #[test]

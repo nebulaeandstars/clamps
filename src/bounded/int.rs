@@ -153,6 +153,21 @@ mod tests {
     }
 
     #[test]
+    fn test_arith() {
+        let foo = BoundedISize::<-100, 100>::new(5).unwrap();
+        for num in -10..10 {
+            assert_eq!(foo + num, foo.inner() + num);
+            assert_eq!(foo - num, foo.inner() - num);
+            assert_eq!(foo * num, foo.inner() * num);
+
+            if num != 0 {
+                assert_eq!(foo / num, foo.inner() / num);
+                assert_eq!(foo % num, foo.inner() % num);
+            }
+        }
+    }
+
+    #[test]
     fn all_types_exist() {
         let _ = BoundedU8::<0, 10>::try_from(5).unwrap();
         let _ = BoundedU16::<0, 10>::try_from(5).unwrap();
