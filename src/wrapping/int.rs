@@ -50,9 +50,8 @@ macro_rules! impl_all {
         // Sub takes a bit more work, as we have to factor in underflows for
         // unsigned integers in advance.
         impl_arith!($type, $other, $inner, Sub, sub, |this, mut other| {
-            if other > this {
-                let rem = (other + MIN) % (MAX - MIN);
-                other = MIN + rem;
+            if other > this - MIN {
+                other = (other + MIN) % (MAX - MIN);
                 if other > this {
                     return this + MAX - other;
                 }
@@ -248,6 +247,21 @@ mod tests {
         a += 5;
         assert_ne!(a, 10);
         assert_eq!(a, 0);
+    }
+
+    #[test]
+    fn test_arith() {
+        let foo = WrappingISize::<-100, 100>::new(5);
+        for num in -10..10 {
+            assert_eq!(foo + num, foo.inner() + num);
+            assert_eq!(foo - num, foo.inner() - num);
+            assert_eq!(foo * num, foo.inner() * num);
+
+            if num != 0 {
+                assert_eq!(foo / num, foo.inner() / num);
+                assert_eq!(foo % num, foo.inner() % num);
+            }
+        }
     }
 
     #[test]
